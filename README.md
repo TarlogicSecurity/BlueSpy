@@ -23,7 +23,7 @@ The PoC uses the following tools:
 + `parecord`
 + `paplay`
 
-In Arch Linux distributions, `bluetoothctl` and `btmgmt` can be installed with the package `bluez-utils`, while `pactl`, `parecord` and `paplay` are avaliable in the `libpulse` package.
+In Arch Linux distributions, `bluetoothctl` and `btmgmt` can be installed with the package `bluez-utils`, while `pactl`, `parecord` and `paplay` are available in the `libpulse` package.
 
 For the PoC to work, it is necessary to have a working instalation of the BlueZ Bluetooth stack, available in the `bluez`package for Arch Linux distributions. A working instalation of an audio server compatible with PulseAudio, such as PipeWire, is also required to record and play audio.
 
