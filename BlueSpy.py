@@ -73,9 +73,10 @@ def main():
     log_info(f"Establishing connection...")
     connect(target, verbose=args.verbose)
 
+    time.sleep(3)
+
     log_info(f"Starting audio recording...")
     log_warn(f"Recording!")
-    time.sleep(1)
     record(target, outfile=args.outfile, verbose=args.verbose)
 
     log_warn(f"Recording stored in \"{args.outfile}\"")
