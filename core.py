@@ -1,9 +1,8 @@
 from enum import Enum
-from typing import Callable, List
-import subprocess
 import re
 import shlex
 from enum import Enum
+from system import run_and_check, CommandValidationException
 
 
 class BluezAddressType(Enum):
@@ -57,22 +56,6 @@ class BluezTarget:
         return self.address == other.address and self.type == other.type
 
 
-def run_and_check(
-    command: List[str],
-    is_valid: Callable[[str], bool] = lambda _: True,
-    verbose: bool = False,
-) -> None:
-    if verbose:
-        print("[C] " + " ".join(command))
-    output = subprocess.run(command, capture_output=True)
-    out = output.stdout.decode("utf-8")
-    if verbose:
-        print(out)
-    if not is_valid(out) or output.stderr != b"":
-        cmdline = " ".join(command)
-        raise Exception(f"Error while executing command {cmdline}", out)
-
-
 class BluezIoCaps(Enum):
     DisplayOnly = 0
     DisplayYesNo = 1
@@ -81,7 +64,7 @@ class BluezIoCaps(Enum):
     KeyboardDisplay = 4
 
 
-def pair(target: BluezTarget, verbose: bool = False) -> None:
+def pair(target: BluezTarget, verbose: bool = False) -> bool:
     # Configure ourselves to be bondable and pairable
     run_and_check(shlex.split("sudo btmgmt bondable true"), verbose=verbose)
     run_and_check(shlex.split("sudo btmgmt pairable true"), verbose=verbose)
@@ -92,13 +75,19 @@ def pair(target: BluezTarget, verbose: bool = False) -> None:
     # Try to pair to a device with NoInputNoOutput capabilities
     # TODO: Sometimes this may fail due to agent requesting user confirmation.
     # Registering the following agent may help: "yes | bt-agent -c NoInputNoOutput"
-    run_and_check(
-        shlex.split(
-            f"sudo btmgmt pair -c {str(BluezIoCaps.NoInputNoOutput.value)} -t {str(target.type.value)} {str(target.address)}"
-        ),
-        is_valid=lambda out: not ("failed" in out and not "Already Paired" in out),
-        verbose=verbose,
-    )
+    try:
+        run_and_check(
+            shlex.split(
+                f"sudo btmgmt pair -c {str(BluezIoCaps.NoInputNoOutput.value)} -t {str(target.type.value)} {str(target.address)}"
+            ),
+            is_valid=lambda out: not ("failed" in out and not "Already Paired" in out),
+            verbose=verbose,
+        )
+        return True
+    except CommandValidationException as e:
+        if "status 0x05 (Authentication Failed)" in e.output:
+            return False
+        raise e
 
 
 def connect(target: BluezTarget, timeout: int = 2, verbose: bool = False):

