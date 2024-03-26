@@ -106,7 +106,9 @@ def connect(target: BluezTarget, timeout: int = 2, verbose: bool = False):
         shlex.split(f"bluetoothctl --timeout {str(timeout)} scan on"), verbose=verbose
     )
     run_and_check(
-        shlex.split(f"bluetoothctl connect {str(target.address)}"), verbose=verbose
+        shlex.split(f"bluetoothctl connect {str(target.address)}"),
+        is_valid=lambda out: not "Failed to connect" in out,
+        verbose=verbose
     )
 
 

