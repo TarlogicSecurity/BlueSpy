@@ -112,14 +112,31 @@ def to_card_name(target: BluezTarget) -> str:
 def to_source_name(target: BluezTarget) -> str:
     return "bluez_input." + normalize_address(target=target) + ".0"
 
-
+def detect_os_family():
+    try:
+        with open("/etc/os-release", "r") as f:
+            os_info = f.read().lower()
+            if "debian" in os_info or "ubuntu" in os_info or "kali" in os_info:
+                return "Debian-based"
+            elif "arch" in os_info or "manjaro" in os_info or "endeavouros" in os_info:
+                return "Arch-based"
+            else:
+                return "Other/Unknown"
+    except FileNotFoundError:
+        return "/etc/os-release not found"
 def record(target: BluezTarget, outfile: str, verbose: bool = True):
     source_name = to_source_name(target)
     card_name = to_card_name(target)
-    run_and_check(
+    if(detect_os_family() == "Debian-based"):
+        run_and_check(
+            shlex.split(f"pactl set-card-profile {card_name} headset-head-unit"),
+            verbose=verbose,
+    )
+    elif(detect_os_family() == "Arch-based"):
+        run_and_check(
         shlex.split(f"pactl set-card-profile {card_name} headset-head-unit-msbc"),
         verbose=verbose,
-    )
+        )
     try:
         run_and_check(["parecord", "-d", source_name, outfile], verbose=verbose)
     except KeyboardInterrupt:
