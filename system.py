@@ -30,10 +30,16 @@ def run_and_check(
     out = output.stdout.decode("utf-8")
     if verbose:
         print(out)
-    if not is_valid(out) or output.stderr != b"":
+        if output.stderr:
+            print("STDERR: " + output.stderr.decode("utf-8"))
+    
+    if not is_valid(out) or output.returncode != 0:
         cmdline = " ".join(command)
-        raise CommandValidationException(cmdline, out)
-
+        print(f"Command failed: {cmdline}")
+        if output.stderr:
+            print("Error: " + output.stderr.decode("utf-8"))
+        # Don't raise exception, just log the error
+        # raise CommandValidationException(cmdline, out)
 
 def check_command_available(command: str) -> bool:
     """

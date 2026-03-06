@@ -1,0 +1,738 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Navigation Tabs -->
+<ul class="nav nav-tabs" id="mainTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="control-panel-tab" data-bs-toggle="tab" data-bs-target="#control-panel" type="button" role="tab" aria-controls="control-panel" aria-selected="true">Control Panel</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab" aria-controls="info" aria-selected="false">Project Overview</button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="mainTabsContent">
+    <!-- Control Panel Tab -->
+    <div class="tab-pane fade show active" id="control-panel" role="tabpanel" aria-labelledby="control-panel-tab">
+        
+<div class="row">
+    <!-- Device Discovery and Connection -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-bluetooth"></i> Device Discovery</h5>
+            </div>
+            <div class="card-body">
+                <button id="scanBtn" class="btn btn-primary mb-3">
+                    <i class="bi bi-search"></i> Scan for Devices
+                </button>
+                <div id="scanSpinner" class="spinner-border text-primary d-none" role="status">
+                    <span class="visually-hidden">Scanning...</span>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-header bg-light text-dark">
+                        <h6 class="mb-0">Direct Connection</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group">
+                            <input type="text" id="directAddressInput" class="form-control" placeholder="00:11:22:33:44:55" pattern="([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}">
+                            <button id="directConnectBtn" class="btn btn-outline-primary">
+                                <i class="bi bi-bluetooth"></i> Connect
+                            </button>
+                        </div>
+                        <small class="text-muted">Enter Bluetooth MAC address (format: XX:XX:XX:XX:XX:XX)</small>
+                    </div>
+                </div>
+                
+                <div id="deviceListContainer" class="d-none">
+                    <h6>Available Devices:</h6>
+                    <div class="device-list">
+                        <ul id="deviceList" class="list-group">
+                            <!-- Devices will be listed here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-link"></i> Connection Status</h5>
+            </div>
+            <div class="card-body">
+                <div id="connectionStatus">
+                    <p>No device connected</p>
+                </div>
+                <div id="connectedDevice" class="d-none">
+                    <div class="alert alert-success d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-bluetooth-connected"></i> Connected to: <span id="deviceName"></span>
+                        </div>
+                        <button id="disconnectBtn" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-bluetooth"></i> Disconnect
+                        </button>
+                    </div>
+                    <div class="mt-3">
+                        <div class="d-flex align-items-center">
+                            <button id="recordBtn" class="btn btn-danger">
+                                <i class="bi bi-record-circle"></i> Start Recording
+                            </button>
+                            <span id="recordingTimer" class="recording-timer d-none">00:00</span>
+                        </div>
+                        <button id="stopBtn" class="btn btn-secondary d-none mt-2">
+                            <i class="bi bi-stop-circle"></i> Stop
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recordings and Logs -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-file-earmark-music"></i> Recordings</h5>
+            </div>
+            <div class="card-body">
+                <button id="refreshRecordingsBtn" class="btn btn-outline-primary mb-3">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+                
+                <div id="audioPlayerContainer" class="mb-3 d-none">
+                    <h6>Now Playing: <span id="nowPlayingName"></span></h6>
+                    <audio id="audioPlayer" controls class="w-100"></audio>
+                    <div class="mt-2 d-flex justify-content-between">
+                        <button id="checkSinksBtn" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-soundwave"></i> Check Audio Sinks
+                        </button>
+                        <a id="downloadCurrentBtn" href="#" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-download"></i> Download Current
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="recording-list">
+                    <ul id="recordingsList" class="list-group">
+                        <!-- Recordings will be listed here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-terminal"></i> Logs</h5>
+            </div>
+            <div class="card-body">
+                <div id="logContainer" class="log-container">
+                    <!-- Logs will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+    
+    <!-- Info Tab -->
+    <div class="tab-pane fade" id="info" role="tabpanel" aria-labelledby="info-tab">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-info-circle"></i> Project Overview</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> <strong>Important:</strong> This repository contains the implementation of a proof of concept to record and replay audio from a Bluetooth device without the legitimate user's awareness. The PoC was demonstrated during the talk <em>BSAM: Seguridad en Bluetooth</em> at RootedCON 2024 in Madrid.
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="bi bi-shield-exclamation"></i> Security Research Focus</h6>
+                                <p>This tool is designed to raise awareness about the insecure use of Bluetooth devices and the need for a consistent methodology for security evaluations. It demonstrates the <strong>BSAM-PA-05</strong> control failure within the BSAM methodology.</p>
+                                <p><strong>Key Vulnerability:</strong> The device enables the pairing procedure without requiring user interaction and exposes its functionality to any agent within the signal range.</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="bi bi-tools"></i> Required Tools</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="bi bi-check-circle text-primary"></i> <code>bluetoothctl</code> - Device scanning and connection</li>
+                                    <li><i class="bi bi-check-circle text-primary"></i> <code>btmgmt</code> - Bluetooth management</li>
+                                    <li><i class="bi bi-check-circle text-primary"></i> <code>pactl</code> - PulseAudio control</li>
+                                    <li><i class="bi bi-check-circle text-primary"></i> <code>parecord</code> - Audio recording</li>
+                                    <li><i class="bi bi-check-circle text-primary"></i> <code>paplay</code> - Audio playback</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <h6><i class="bi bi-gear"></i> System Requirements</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="bi bi-arrow-right text-success"></i> Python 3.11.8+ (tested)</li>
+                                    <li><i class="bi bi-arrow-right text-success"></i> Linux system (Arch Linux recommended)</li>
+                                    <li><i class="bi bi-arrow-right text-success"></i> BlueZ Bluetooth stack (<code>bluez</code> package)</li>
+                                    <li><i class="bi bi-arrow-right text-success"></i> PulseAudio-compatible audio server</li>
+                                    <li><i class="bi bi-arrow-right text-success"></i> <code>bluez-utils</code> and <code>libpulse</code> packages</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="bi bi-play-circle"></i> Execution Process</h6>
+                                <ol class="list-unstyled">
+                                    <li><span class="badge bg-primary me-2">1</span> Discover device address using <code>bluetoothctl</code></li>
+                                    <li><span class="badge bg-primary me-2">2</span> Run: <code>python BlueSpy.py -a &lt;address&gt;</code></li>
+                                    <li><span class="badge bg-primary me-2">3</span> Grant superuser permissions when prompted</li>
+                                    <li><span class="badge bg-primary me-2">4</span> BlueZ configuration and pairing handled automatically</li>
+                                    <li><span class="badge bg-primary me-2">5</span> Audio stream capture begins</li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <h6><i class="bi bi-bug"></i> Troubleshooting Components</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="bi bi-file-code"></i> <strong>pair.py</strong> - Pairing process management</li>
+                                    <li><i class="bi bi-file-code"></i> <strong>connect.py</strong> - Connection establishment</li>
+                                    <li><i class="bi bi-file-code"></i> <strong>just_record.py</strong> - Audio recording session</li>
+                                    <li><i class="bi bi-file-code"></i> <strong>core.py</strong> - Core functions and commands</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="bi bi-book"></i> References & Methodology</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="bi bi-link-45deg text-info"></i> <a href="https://www.tarlogic.com/bsam/" target="_blank">BSAM: Bluetooth Security Assessment Methodology</a></li>
+                                    <li><i class="bi bi-link-45deg text-info"></i> <a href="https://www.tarlogic.com/blog/bluespy-spying-on-bluetooth-conversations/" target="_blank">BlueSpy Blog Post</a></li>
+                                    <li><i class="bi bi-presentation"></i> Presented at RootedCON 2024, Madrid</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="bi bi-lightbulb"></i> <strong>Educational Purpose:</strong> This project exploits the failure to comply with the BSAM-PA-05 control, demonstrating how devices can be compromised when they enable pairing without user interaction.
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <a href="https://github.com/TarlogicSecurity/BlueSpy" target="_blank" class="btn btn-outline-primary me-2">
+                                <i class="bi bi-github"></i> Original BlueSpy Project
+                            </a>
+                            <a href="https://github.com/sidinsearch" target="_blank" class="btn btn-outline-secondary me-2">
+                                <i class="bi bi-person-circle"></i> Modified by Siddharth Shinde
+                            </a>
+                            <a href="https://www.tarlogic.com/bsam/" target="_blank" class="btn btn-outline-info">
+                                <i class="bi bi-shield-check"></i> BSAM Methodology
+                            </a>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <span class="badge bg-danger">Security Research</span>
+                            <span class="badge bg-warning">Educational</span>
+                            <span class="badge bg-info">Open Source</span>
+                            <span class="badge bg-success">RootedCON 2024</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Global variables
+    let isRecording = false;
+    let connectedDevice = null;
+    let recordingTimer = null;
+    let recordingStartTime = null;
+    
+    // Helper function to add log messages
+    function addLog(message, type = 'info') {
+        const logContainer = document.getElementById('logContainer');
+        const logEntry = document.createElement('div');
+        logEntry.className = `log-${type}`;
+        
+        const timestamp = new Date().toLocaleTimeString();
+        logEntry.textContent = `[${timestamp}] ${message}`;
+        
+        logContainer.appendChild(logEntry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+    
+    // Scan for devices
+    document.getElementById('scanBtn').addEventListener('click', function() {
+        const scanBtn = document.getElementById('scanBtn');
+        const scanSpinner = document.getElementById('scanSpinner');
+        const deviceListContainer = document.getElementById('deviceListContainer');
+        const deviceList = document.getElementById('deviceList');
+        
+        // Show spinner, hide button
+        scanBtn.classList.add('d-none');
+        scanSpinner.classList.remove('d-none');
+        
+        addLog('Scanning for Bluetooth devices...');
+        
+        // Make AJAX request to scan for devices
+        $.ajax({
+            url: '/scan',
+            type: 'POST',
+            success: function(response) {
+                // Hide spinner, show button
+                scanBtn.classList.remove('d-none');
+                scanSpinner.classList.add('d-none');
+                
+                // Show device list container
+                deviceListContainer.classList.remove('d-none');
+                
+                // Clear previous list
+                deviceList.innerHTML = '';
+                
+                if (response.devices && response.devices.length > 0) {
+                    addLog(`Found ${response.devices.length} devices`);
+                    
+                    // Add each device to the list
+                    response.devices.forEach(function(device) {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        
+                        const deviceInfo = document.createElement('div');
+                        deviceInfo.innerHTML = `<strong>${device.name || 'Unknown Device'}</strong><br><small>${device.address}</small>`;
+                        
+                        const connectBtn = document.createElement('button');
+                        connectBtn.className = 'btn btn-sm btn-outline-primary';
+                        connectBtn.innerHTML = '<i class="bi bi-bluetooth"></i> Connect';
+                        connectBtn.addEventListener('click', function() {
+                            connectToDevice(device);
+                        });
+                        
+                        listItem.appendChild(deviceInfo);
+                        listItem.appendChild(connectBtn);
+                        deviceList.appendChild(listItem);
+                    });
+                } else {
+                    addLog('No devices found', 'warn');
+                    deviceList.innerHTML = '<li class="list-group-item">No devices found</li>';
+                }
+            },
+            error: function(error) {
+                // Hide spinner, show button
+                scanBtn.classList.remove('d-none');
+                scanSpinner.classList.add('d-none');
+                
+                addLog('Error scanning for devices', 'error');
+                console.error('Error:', error);
+            }
+        });
+    });
+    
+    // Connect to a device
+    function connectToDevice(device) {
+        addLog(`Attempting to connect to ${device.name || device.address}...`);
+        
+        // Make AJAX request to connect to the device
+        $.ajax({
+            url: '/connect',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                address: device.address,
+                address_type: 'BR_EDR'  // Default to BR_EDR
+            }),
+            success: function(response) {
+                if (response.success) {
+                    addLog(response.message, 'info');
+                    
+                    // Update UI to show connected device
+                    connectedDevice = device;
+                    document.getElementById('connectionStatus').classList.add('d-none');
+                    document.getElementById('connectedDevice').classList.remove('d-none');
+                    document.getElementById('deviceName').textContent = device.name || device.address;
+                } else {
+                    addLog(response.message, 'error');
+                }
+            },
+            error: function(error) {
+                addLog('Error connecting to device', 'error');
+                console.error('Error:', error);
+            }
+        });
+    }
+    
+    // Start recording
+    document.getElementById('recordBtn').addEventListener('click', function() {
+        if (!connectedDevice) {
+            addLog('No device connected', 'error');
+            return;
+        }
+        
+        addLog('Starting recording...');
+        
+        // Make AJAX request to start recording
+        $.ajax({
+            url: '/record',
+            type: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    isRecording = true;
+                    addLog(response.message, 'info');
+                    
+                    // Update UI to show recording in progress
+                    document.getElementById('recordBtn').classList.add('d-none');
+                    document.getElementById('stopBtn').classList.remove('d-none');
+                    
+                    // Show timer and start it
+                    const timerElement = document.getElementById('recordingTimer');
+                    timerElement.classList.remove('d-none');
+                    recordingStartTime = Date.now();
+                    
+                    // Start the timer
+                    recordingTimer = setInterval(updateTimer, 1000);
+                    
+                    // Add recording indicator
+                    const deviceName = document.getElementById('deviceName');
+                    const indicator = document.createElement('span');
+                    indicator.className = 'recording-indicator';
+                    indicator.id = 'recordingIndicator';
+                    deviceName.parentNode.insertBefore(indicator, deviceName);
+                } else {
+                    addLog(response.message, 'error');
+                }
+            },
+            error: function(error) {
+                addLog('Error starting recording', 'error');
+                console.error('Error:', error);
+            }
+        });
+    });
+    
+    // Stop recording or live listening
+    document.getElementById('stopBtn').addEventListener('click', function() {
+        if (!isRecording) {
+            return;
+        }
+        
+        addLog('Stopping...');
+        
+        // Make AJAX request to stop recording or listening
+        $.ajax({
+            url: '/stop',
+            type: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    isRecording = false;
+                    addLog(response.message, 'info');
+                    
+                    // Update UI to show stopped
+                    document.getElementById('recordBtn').classList.remove('d-none');
+                    document.getElementById('stopBtn').classList.add('d-none');
+                    
+                    // Hide timer and stop it
+                    const timerElement = document.getElementById('recordingTimer');
+                    timerElement.classList.add('d-none');
+                    if (recordingTimer) {
+                        clearInterval(recordingTimer);
+                        recordingTimer = null;
+                    }
+                    
+                    // Remove indicator
+                    const indicator = document.getElementById('recordingIndicator');
+                    if (indicator) {
+                        indicator.remove();
+                    }
+                    
+                    // Refresh recordings list
+                    refreshRecordings();
+                } else {
+                    addLog(response.message, 'error');
+                }
+            },
+            error: function(error) {
+                addLog('Error stopping', 'error');
+                console.error('Error:', error);
+            }
+        });
+    });
+    
+    // Refresh recordings list
+    function refreshRecordings() {
+        const recordingsList = document.getElementById('recordingsList');
+        
+        addLog('Refreshing recordings list...');
+        
+        // Make AJAX request to get recordings
+        $.ajax({
+            url: '/recordings',
+            type: 'GET',
+            success: function(response) {
+                // Clear previous list
+                recordingsList.innerHTML = '';
+                
+                if (response.recordings && response.recordings.length > 0) {
+                    addLog(`Found ${response.recordings.length} recordings`);
+                    
+                    // Add each recording to the list
+                    response.recordings.forEach(function(recording) {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item';
+                        
+                        // Format file size
+                        const fileSize = formatFileSize(recording.size);
+                        
+                        listItem.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>${recording.filename}</strong><br>
+                                    <small>${recording.created} (${fileSize})</small>
+                                </div>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary play-btn" data-filename="${recording.filename}">
+                                        <i class="bi bi-play-fill"></i>
+                                    </button>
+                                    <a href="/player/${recording.filename}" class="btn btn-sm btn-outline-info" target="_blank">
+                                        <i class="bi bi-music-note-beamed"></i>
+                                    </a>
+                                    <a href="/download/${recording.filename}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger delete-btn" data-filename="${recording.filename}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        recordingsList.appendChild(listItem);
+                    });
+                    
+                    // Add event listeners for play and delete buttons
+                    document.querySelectorAll('.play-btn').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            const filename = this.getAttribute('data-filename');
+                            playRecording(filename);
+                        });
+                    });
+                    
+                    document.querySelectorAll('.delete-btn').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            const filename = this.getAttribute('data-filename');
+                            deleteRecording(filename);
+                        });
+                    });
+                } else {
+                    recordingsList.innerHTML = '<li class="list-group-item">No recordings found</li>';
+                }
+            },
+            error: function(error) {
+                addLog('Error refreshing recordings', 'error');
+                console.error('Error:', error);
+            }
+        });
+    }
+    
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes < 1024) {
+            return bytes + ' B';
+        } else if (bytes < 1024 * 1024) {
+            return (bytes / 1024).toFixed(2) + ' KB';
+        } else {
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+    }
+    
+    // Play recording
+    function playRecording(filename) {
+        addLog(`Playing recording: ${filename}`);
+        
+        // Get the audio player container and player
+        const audioPlayerContainer = document.getElementById('audioPlayerContainer');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const nowPlayingName = document.getElementById('nowPlayingName');
+        const downloadCurrentBtn = document.getElementById('downloadCurrentBtn');
+        
+        // Show the audio player
+        audioPlayerContainer.classList.remove('d-none');
+        
+        // Set the now playing name
+        nowPlayingName.textContent = filename;
+        
+        // Set the download link
+        downloadCurrentBtn.href = `/download/${filename}`;
+        
+        // Set the source to the recording file
+        audioPlayer.src = `/play/${filename}`;
+        
+        // Play the audio
+        audioPlayer.play()
+            .then(() => {
+                addLog(`Playing ${filename}`, 'info');
+            })
+            .catch(error => {
+                addLog(`Error playing ${filename}: ${error.message}`, 'error');
+                console.error('Error:', error);
+            });
+            
+        // Add event listener for when audio ends
+        audioPlayer.onended = function() {
+            addLog(`Finished playing ${filename}`, 'info');
+        };
+    }
+    
+    // Delete recording
+    function deleteRecording(filename) {
+        if (!confirm(`Are you sure you want to delete ${filename}?`)) {
+            return;
+        }
+        
+        addLog(`Deleting recording: ${filename}`);
+        
+        // Make AJAX request to delete recording
+        $.ajax({
+            url: `/delete/${filename}`,
+            type: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    addLog(response.message, 'info');
+                    refreshRecordings();
+                } else {
+                    addLog(response.message, 'error');
+                }
+            },
+            error: function(error) {
+                addLog('Error deleting recording', 'error');
+                console.error('Error:', error);
+            }
+        });
+    }
+    
+    // Check audio sinks
+    document.getElementById('checkSinksBtn').addEventListener('click', function() {
+        addLog('Checking available audio sinks...');
+        
+        // Make AJAX request to get sinks
+        $.ajax({
+            url: '/sinks',
+            type: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    if (response.sinks && response.sinks.length > 0) {
+                        addLog(`Found ${response.sinks.length} audio sinks:`, 'info');
+                        response.sinks.forEach(function(sink) {
+                            addLog(`- ${sink}`, 'info');
+                        });
+                    } else {
+                        addLog('No audio sinks found', 'warn');
+                    }
+                } else {
+                    addLog(response.message, 'error');
+                }
+            },
+            error: function(error) {
+                addLog('Error checking audio sinks', 'error');
+                console.error('Error:', error);
+            }
+        });
+    });
+    
+    // Refresh recordings button
+    document.getElementById('refreshRecordingsBtn').addEventListener('click', function() {
+        refreshRecordings();
+    });
+    
+    // Direct connect by address
+    document.getElementById('directConnectBtn').addEventListener('click', function() {
+        const addressInput = document.getElementById('directAddressInput');
+        const address = addressInput.value.trim();
+        
+        // Validate the address format
+        const addressRegex = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
+        if (!addressRegex.test(address)) {
+            addLog('Invalid Bluetooth address format. Use XX:XX:XX:XX:XX:XX', 'error');
+            return;
+        }
+        
+        addLog(`Attempting to connect to ${address}...`);
+        
+        // Create a device object
+        const device = {
+            address: address,
+            name: address  // Use address as name since we don't have a name
+        };
+        
+        // Connect to the device
+        connectToDevice(device);
+    });
+    
+    // Disconnect from device
+    document.getElementById('disconnectBtn').addEventListener('click', function() {
+        if (!connectedDevice) {
+            return;
+        }
+        
+        addLog(`Disconnecting from ${connectedDevice.name || connectedDevice.address}...`);
+        
+        // Make AJAX request to disconnect
+        $.ajax({
+            url: '/disconnect',
+            type: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    addLog(response.message, 'info');
+                    
+                    // Update UI to hide connected device
+                    connectedDevice = null;
+                    document.getElementById('connectionStatus').classList.remove('d-none');
+                    document.getElementById('connectedDevice').classList.add('d-none');
+                    
+                    // Reset recording UI if needed
+                    document.getElementById('recordBtn').classList.remove('d-none');
+                    document.getElementById('stopBtn').classList.add('d-none');
+                    
+                    // Hide timer and stop it
+                    const timerElement = document.getElementById('recordingTimer');
+                    timerElement.classList.add('d-none');
+                    if (recordingTimer) {
+                        clearInterval(recordingTimer);
+                        recordingTimer = null;
+                    }
+                    
+                    // Remove recording indicator if present
+                    const indicator = document.getElementById('recordingIndicator');
+                    if (indicator) {
+                        indicator.remove();
+                    }
+                } else {
+                    addLog(response.message, 'error');
+                }
+            },
+            error: function(error) {
+                addLog('Error disconnecting from device', 'error');
+                console.error('Error:', error);
+            }
+        });
+    });
+    
+    // Timer update function
+    function updateTimer() {
+        if (recordingStartTime) {
+            const elapsedTime = Math.floor((Date.now() - recordingStartTime) / 1000);
+            const minutes = Math.floor(elapsedTime / 60);
+            const seconds = elapsedTime % 60;
+            const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            const timerElement = document.getElementById('recordingTimer');
+            if (timerElement) {
+                timerElement.textContent = formattedTime;
+            }
+        }
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        addLog('BlueSpy Web Interface initialized');
+        refreshRecordings();
+    });
+</script>
+{% endblock %}

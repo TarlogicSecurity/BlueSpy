@@ -1,9 +1,8 @@
 from enum import Enum
 import re
 import shlex
-from enum import Enum
 from system import run_and_check, CommandValidationException
-
+from typing import Union
 
 class BluezAddressType(Enum):
     BR_EDR = 0
@@ -43,7 +42,7 @@ class BluezTarget:
     regexp = re.compile(r"(?i:^([\da-f]{2}:){5}[\da-f]{2}$)")
 
     def __init__(
-        self, address: str, type: int | BluezAddressType = BluezAddressType.BR_EDR
+        self, address: str, type: Union[int, BluezAddressType] = BluezAddressType.BR_EDR
     ):
         self.address = Address(address)
         if isinstance(type, int):
